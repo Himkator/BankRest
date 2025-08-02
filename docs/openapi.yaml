@@ -1,1 +1,620 @@
 # Здесь будет OpenAPI описание всех доступных эндпоинтов и моделей данных.
+openapi: 3.1.0
+info:
+  title: BankRest api
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Admin Controller
+    description: Operations available only for admins
+  - name: Authentication
+    description: User registration and login APIs
+  - name: card_method
+    description: Operations related to user cards
+paths:
+  /api/v1/cards/{id}/block:
+    post:
+      tags:
+        - card_method
+      summary: Block card
+      description: Blocks a card by ID if it belongs to the user
+      operationId: blockCard
+      parameters:
+        - name: id
+          in: path
+          description: Card ID
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Card blocked successfully
+        "404":
+          description: Card not found
+  /api/v1/cards/transfer:
+    post:
+      tags:
+        - card_method
+      summary: Transfer money
+      description: Transfers money from one card to another
+      operationId: transferCard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardTransferRequest"
+        required: true
+      responses:
+        "200":
+          description: Transfer successful
+  /api/v1/cards/createCard:
+    post:
+      tags:
+        - card_method
+      summary: Create a new card
+      description: Generates and assigns a new card to the current user
+      operationId: createCard
+      responses:
+        "201":
+          description: Card successfully created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CardDTO"
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account with the given data
+      operationId: register
+      requestBody:
+        description: User registration details
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid input data
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Logs in a user and returns JWT token
+      operationId: login
+      requestBody:
+        description: User login details
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+  /api/v1/admin/users/{id}/block:
+    post:
+      tags:
+        - Admin Controller
+      summary: Activate a user
+      description: Activate a specific user by its ID. Only accessible by admins.
+      operationId: blockUser
+      parameters:
+        - name: id
+          in: path
+          description: User ID to block
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: User successfully activated
+        "404":
+          description: User not found
+  /api/v1/admin/users/{id}/activate:
+    post:
+      tags:
+        - Admin Controller
+      summary: Activate a user
+      description: Activate a specific user by its ID. Only accessible by admins.
+      operationId: activateUser
+      parameters:
+        - name: id
+          in: path
+          description: User ID to activate
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: User successfully activated
+        "404":
+          description: User not found
+  /api/v1/admin/cards/{id}/block:
+    post:
+      tags:
+        - Admin Controller
+      summary: Block a card
+      description: Block a specific card by its ID. Only accessible by admins.
+      operationId: blockCard_1
+      parameters:
+        - name: id
+          in: path
+          description: Card ID to block
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Card successfully blocked
+        "404":
+          description: Card not found
+  /api/v1/admin/cards/{id}/activate:
+    post:
+      tags:
+        - Admin Controller
+      summary: Activate a card
+      description: Activate a specific card by its ID. Only accessible by admins.
+      operationId: activateCard
+      parameters:
+        - name: id
+          in: path
+          description: Card ID to activate
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Card successfully activated
+        "404":
+          description: Card not found
+  /api/v1/cards:
+    get:
+      tags:
+        - card_method
+      summary: Get all cards
+      description: Returns paginated list of user's cards filtered by optional parameters
+      operationId: getCards
+      parameters:
+        - name: cardNumber
+          in: query
+          description: Filter by card number
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by card status
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - BLOCKED
+              - EXPIRED
+              - PENDING_BLOCK
+        - name: minBalance
+          in: query
+          description: Filter by minimum card balance
+          required: false
+          schema:
+            type: number
+        - name: maxBalance
+          in: query
+          description: Filter by maximum card balance
+          required: false
+          schema:
+            type: number
+        - name: expirationAfter
+          in: query
+          description: Filter by cards expiring after this date (yyyy-MM-dd)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: expirationBefore
+          in: query
+          description: Filter by cards expiring before this date (yyyy-MM-dd)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: pageable
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Pageable"
+        - name: page
+          in: query
+          description: Page number (zero-based index)
+        - name: size
+          in: query
+          description: Page size
+        - name: sort
+          in: query
+          description: "Sort by fields (e.g. balance,expirationDate)"
+      responses:
+        "200":
+          description: Cards fetched successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageCardDTO"
+  /api/v1/cards/{id}:
+    get:
+      tags:
+        - card_method
+      summary: Get card by ID
+      description: Returns a card by its ID if it belongs to the user
+      operationId: getCardById
+      parameters:
+        - name: id
+          in: path
+          description: Card ID
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Card found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CardDTO"
+        "404":
+          description: Card not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CardDTO"
+  /api/v1/admin/users:
+    get:
+      tags:
+        - Admin Controller
+      summary: Get a list of users
+      description: "Retrieve paginated users filtered by email, phone, name, surname,\
+        \ and activation status."
+      operationId: getUsers
+      parameters:
+        - name: email
+          in: query
+          description: User email (optional)
+          required: false
+          schema:
+            type: string
+        - name: phone
+          in: query
+          description: Phone number (optional)
+          required: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: User's first name (optional)
+          required: false
+          schema:
+            type: string
+        - name: surname
+          in: query
+          description: User's surname (optional)
+          required: false
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          description: Activation status (optional)
+          required: false
+          schema:
+            type: boolean
+        - name: pageable
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: List of users successfully retrieved
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageUserDTO"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageUserDTO"
+  /api/v1/admin/cards:
+    get:
+      tags:
+        - Admin Controller
+      summary: Get a list of cards
+      description: "Retrieve paginated cards filtered by card number, status, balance\
+        \ range, and expiration date."
+      operationId: getCards_1
+      parameters:
+        - name: cardNumber
+          in: query
+          description: Card number (optional)
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Card status (optional)
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - BLOCKED
+              - EXPIRED
+              - PENDING_BLOCK
+        - name: minBalance
+          in: query
+          description: Minimum balance (optional)
+          required: false
+          schema:
+            type: number
+        - name: maxBalance
+          in: query
+          description: Maximum balance (optional)
+          required: false
+          schema:
+            type: number
+        - name: expirationAfter
+          in: query
+          description: Expiration date after (optional)
+          required: false
+          schema:
+            type: string
+            format: date
+          example: 2025-01-01
+        - name: expirationBefore
+          in: query
+          description: Expiration date before (optional)
+          required: false
+          schema:
+            type: string
+            format: date
+          example: 2030-01-01
+        - name: pageable
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: List of cards successfully retrieved
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageCardDTO"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageCardDTO"
+components:
+  schemas:
+    CardTransferRequest:
+      type: object
+      properties:
+        fromCardId:
+          type: integer
+          format: int64
+        toCardId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+      required:
+        - fromCardId
+        - toCardId
+    CardDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        cardNumber:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        expirationDate:
+          type: string
+          format: date
+        status:
+          type: string
+        balance:
+          type: number
+    RegisterRequest:
+      type: object
+      description: Register json
+      properties:
+        email:
+          type: string
+          description: email
+          minLength: 1
+        phone:
+          type: string
+          description: phone
+          minLength: 1
+        name:
+          type: string
+          description: name
+          minLength: 1
+        surname:
+          type: string
+          description: surname
+          minLength: 1
+        password:
+          type: string
+          description: password
+          minLength: 1
+    AuthResponse:
+      type: object
+      description: Authentication response containing JWT token and user info
+      properties:
+        token:
+          type: string
+          description: JWT access token
+    LoginRequest:
+      type: object
+      description: Login json
+      properties:
+        email:
+          type: string
+          description: email
+          minLength: 1
+        password:
+          type: string
+          description: password
+          minLength: 1
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageCardDTO:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardDTO"
+        number:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        unpaged:
+          type: boolean
+        paged:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+    PageUserDTO:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserDTO"
+        number:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+        phone:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+        isActive:
+          type: boolean
+        role:
+          type: string
